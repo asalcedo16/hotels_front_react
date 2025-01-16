@@ -4,6 +4,7 @@ import api from '../services/api';
 import { Card, Row, Col, Container, Table, Button, Modal, Form } from 'react-bootstrap';
 import { HotelContext } from '../context/HotelContext';
 import AlertMessage from "../components/AlertMessage";
+import ciudadesData from '../data/ciudades.json';
 
 const Home = () => {
   const [hoteles, setHoteles] = useState([]);
@@ -34,32 +35,17 @@ const Home = () => {
         setLoading(false);
       }
     };
+
+    setCiudades(ciudadesData);
+    
     fetchHoteles();
 
-    const fetchCiudades = async () => {
-      try {
-        const response = await api.get('ciudades'); // Asegúrate de que esta ruta sea la correcta
-        setCiudades(response.data);
-      } catch (err) {
-        setAlert({ message: 'Error al obtener las ciudades', variant: "danger" });
-      }
-    };
-    fetchCiudades();
-
+    
   }, []);
 
 
 
-  const handleDelete = async (hotelId) => {
-    try {
-      await api.delete(`hoteles/${hotelId}`);
-      setHoteles(hoteles.filter(hotel => hotel.id !== hotelId));
-    } catch (err) {
-      alert('Error al eliminar el hotel');
-    }
-  };
-
-  const handleNavigate = (hotel, path) => {
+   const handleNavigate = (hotel, path) => {
     setHotel(hotel); // Guarda el hotel en el contexto
     setTimeout(() => navigate(path), 0);
   };
@@ -166,13 +152,7 @@ const Home = () => {
                   >
                     Habitaciones
                   </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(hotel.id)}
-                  >
-                    Eliminar
-                  </Button>
+                 
                 </div>
               </Card.Body>
             </Card>
