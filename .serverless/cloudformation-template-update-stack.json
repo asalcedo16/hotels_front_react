@@ -1,0 +1,159 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "ServerlessDeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ServerlessDeploymentBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "ServerlessDeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      }
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "HotelReactAppBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "hotel-react-app-bucket",
+        "WebsiteConfiguration": {
+          "IndexDocument": "index.html",
+          "ErrorDocument": "index.html"
+        }
+      }
+    },
+    "CloudFrontDistribution": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Origins": [
+            {
+              "DomainName": {
+                "Fn::GetAtt": [
+                  "HotelReactAppBucket",
+                  "DomainName"
+                ]
+              },
+              "Id": "HotelReactAppBucketOrigin",
+              "S3OriginConfig": {}
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "HotelReactAppBucketOrigin",
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "AllowedMethods": [
+              "DELETE",
+              "GET",
+              "HEAD",
+              "OPTIONS",
+              "PATCH",
+              "POST",
+              "PUT"
+            ],
+            "CachedMethods": [
+              "DELETE",
+              "GET",
+              "HEAD",
+              "OPTIONS",
+              "PATCH",
+              "POST",
+              "PUT"
+            ],
+            "ForwardedValues": {
+              "QueryString": false,
+              "Cookies": {
+                "Forward": "none"
+              },
+              "Headers": [
+                "Origin"
+              ]
+            },
+            "MinTTL": 0,
+            "DefaultTTL": 3600,
+            "MaxTTL": 86400
+          },
+          "ViewerCertificate": {
+            "CloudFrontDefaultCertificate": true
+          },
+          "DefaultRootObject": "index.html"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": {
+        "Ref": "ServerlessDeploymentBucket"
+      },
+      "Export": {
+        "Name": "sls-hotel-react-app-dev-ServerlessDeploymentBucketName"
+      }
+    },
+    "DistributionId": {
+      "Value": {
+        "Ref": "CloudFrontDistribution"
+      },
+      "Description": "CloudFront Distribution ID"
+    }
+  }
+}

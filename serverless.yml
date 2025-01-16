@@ -1,0 +1,77 @@
+service: hotel-react-app
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+
+plugins:
+  - serverless-s3-sync
+  # - serverless-cloudfront-invalidate
+
+custom:
+  s3Sync:
+    - bucketName: hotel-react-app-bucket
+      bucketPrefix: ''
+      localDir: build
+  cloudFrontDistributionId:
+    Fn::GetAtt: 
+      - CloudFrontDistribution
+      - Id
+
+resources:
+  Resources:
+    HotelReactAppBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hotel-react-app-bucket
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Enabled: true
+          Origins:
+            - DomainName: !GetAtt HotelReactAppBucket.DomainName
+              Id: HotelReactAppBucketOrigin
+              S3OriginConfig: {}
+          DefaultCacheBehavior:
+            TargetOriginId: HotelReactAppBucketOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - DELETE
+              - GET
+              - HEAD
+              - OPTIONS
+              - PATCH
+              - POST
+              - PUT
+            CachedMethods:
+              - DELETE
+              - GET
+              - HEAD
+              - OPTIONS
+              - PATCH
+              - POST
+              - PUT
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+              Headers:
+                - Origin
+            MinTTL: 0
+            DefaultTTL: 3600
+            MaxTTL: 86400
+          ViewerCertificate:
+            CloudFrontDefaultCertificate: true
+          DefaultRootObject: index.html
+
+  Outputs:
+    DistributionId:
+      Value: !Ref CloudFrontDistribution
+      Description: "CloudFront Distribution ID"
+
+functions: {}
